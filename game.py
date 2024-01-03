@@ -18,7 +18,6 @@ class Game:
 
     @classmethod
     def initialize(cls):
-        # Import classes here to avoid circular dependency
         from player import Player
         from enemy import Enemy, EnemySquare
         from mana import Mana
@@ -61,5 +60,4 @@ class Game:
             cls.shop.manager.update(cls.clock.get_time() / 1000.0)
             cls.shop.manager.draw_ui(cls.window)
 
-# Call initialize at the end of the file to set up the game elements
 Game.initialize()

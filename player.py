@@ -2,7 +2,7 @@ import pygame
 import math
 from config import Config
 from random import uniform
-# Do not import Bullet here to avoid circular dependency
+
 
 class Player:
     list = []
@@ -14,10 +14,10 @@ class Player:
         self.speed = 1
         self.angle = 0
         self.default_speed = 0.5
-        self.run_speed = 1.5
+        self.run_speed = 1.2
         self.turn_speed = 0.125
-        self.health = 80000
-        self.max_health = 80000
+        self.health = 5
+        self.max_health = 5
         self.mana = 0
         self.is_dead = False
         self.vel_x, self.vel_y = 0, 0
@@ -29,7 +29,6 @@ class Player:
         Player.list.append(self)
 
     def draw(self):
-        # Assuming you have a reference to the game window
         from game import Game
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -125,6 +124,9 @@ class Player:
                 else:
                     self.health += 1
                     self.timer_add_health = 0
+
+    def get_pos(self):
+        return (self.x, self.y)
 
     def die(self):
         if self.is_dead: return

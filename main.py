@@ -8,37 +8,43 @@ from enemy import Enemy, EnemySquare
 from mana import Mana
 from particle import Particle
 from shop import Shop
-from start_menu import StartMenu
 
 def main():
     spawn_timer = 0
-    spawn_interval = 0.5
+    #speed_timer = 0
+    spawn_interval = 0.8
     ui_manager = pygame_gui.UIManager((Config.WIDTH, Config.HEIGHT), 'theme_game.json')
     time_delta = 0
 
-    start_menu = StartMenu(Game.window, ui_manager)
     shop = Shop(ui_manager, Game.player)
     while Game.running:
+        #speed_timer += 1
+        #if speed_timer == 1:
+        #    first_pos = Game.player.get_pos()
+        #elif speed_timer == Config.FPS:
+        #    second_pos = Game.player.get_pos()
+
+        #    dx, dy = second_pos[0] - first_pos[0], second_pos[1] - first_pos[1]
+        #    distance = (dx**2 + dy**2)**0.5
+        #    print(f'{distance} p/s') # pixels per second
+
+        #    speed_timer = 0
+
+        #if Game.status != 'playing': continue
+
         time_delta = Game.clock.tick(Config.FPS) / 1000.0
         Game.window.fill((0, 0, 0))
 
         # Spawn enemies
         spawn_timer += 1 / Config.FPS
         if spawn_timer >= spawn_interval:
-            [Enemy(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1), (187, 0, 0), 10, speed=random.uniform(1.0, 1.6), health=random.randint(1, 4)) for _ in range(random.randint(1, 5))]
+            random_enemy = random.choice(['Enemy', 'EnemySquare'])
+            match random_enemy:
+                case 'Enemy': [Enemy(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1), (187, 0, 0), 10, speed=random.uniform(1.0, 1.6), health=random.randint(1, 4)) for _ in range(random.randint(1, 5))]
+                case 'EnemySquare': [EnemySquare(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1)) for _ in range(1, 7)]
             spawn_timer = 0
 
-        if Game.status == 'start_menu':
-            for event in pygame.event.get():
-                ui_manager.process_events(event)
-                result = start_menu.handle_events(event)
-                if result == 'start':
-                    print('start game')
-                elif result == 'quit':
-                    print('quit game')
-                    Game.running = False
-                    break
-        elif not Game.paused:
+        if not Game.paused:
             # Normal game update logic
             Game.player.update()
             for bullet in Bullet.list:
