@@ -7,10 +7,11 @@ from particle import Particle
 from player import Player
 from game import Game
 
+
 class Enemy:
     list = []
 
-    def __init__(self, x, y, color, radius, health=5, speed=0.4):
+    def __init__(self, x: int, y: int, color: tuple = (187, 0, 0), radius: float = 9, health=3, speed=1.3):
         self.x, self.y = x, y
         self.color = color
         self.radius = radius
@@ -156,4 +157,88 @@ class EnemySquare:
         [Mana(self.x, self.y) for _ in range(random.randint(5, 10))]
         [Particle(self.x, self.y, self.color, radius=1) for _ in range(random.randint(5, 15))]
         EnemySquare.list.remove(self)
+        del self
+
+
+class EnemyTriangle:
+    list = []
+
+    def __init__(self, x: int, y: int, color: tuple = (210, 200, 0), size: int | float = 32, speed: float = 0.75, health: int = 13, summon_rate: int | float = 3.2):
+        self.x, self.y = x, y
+        self.color = color
+        self.size = size
+        self.height = size * math.sqrt(3) / 2
+        self.points = []
+        self.speed = speed
+        self.health = health
+        self.angle = 0
+        self.turn_speed = 0.038
+        self.summon_rate = summon_rate
+        self.spawn_time = 0
+        self.distance = 0
+        self.is_dead = False
+        EnemyTriangle.list.append(self)
+
+    def draw(self):
+        self.points = [(self.x, self.y - 2/3 * self.height), (self.x - self.size/2, self.y + 1/3 * self.height), (self.x + self.size/2, self.y + 1/3 * self.height)]
+        pygame.draw.polygon(Game.window, self.color, self.points, 4)
+
+    def update(self):
+        self.draw()
+        self.update_angle()
+        self.move()
+        self.summon()
+        self.check_health()
+        self.check_size()
+
+    def update_angle(self):
+        if not Player.list:
+            return
+
+        player = Player.list[0]
+        target_angle = math.atan2(player.y - self.y, player.x - self.x)
+
+        angle_diff = (target_angle - self.angle + math.pi) % (2 * math.pi) - math.pi
+        if angle_diff < -self.turn_speed:
+            self.angle -= self.turn_speed
+        elif angle_diff > self.turn_speed:
+            self.angle += self.turn_speed
+        else:
+            self.angle = target_angle
+
+    def move(self):
+        if not Player.list:
+            return
+
+        player = Player.list[0]
+        dx, dy = player.x - self.x, player.y - self.y
+        distance = math.sqrt(dx**2 + dy**2)
+        self.distance = distance
+
+        if distance >= 110:
+            self.x += math.cos(self.angle) * self.speed
+            self.y += math.sin(self.angle) * self.speed
+
+    def summon(self):
+        self.spawn_time += 1 / Config.FPS
+        if self.spawn_time >= self.summon_rate and not self.distance >= 110:
+            new_pos = (random.uniform(self.x - 10, self.x + 10), random.uniform(self.y - 10, self.y + 10))
+            [Enemy(new_pos[0], new_pos[1]) for _ in range(random.randint(1, 4))]
+            self.spawn_time = 0
+            self.size -= 6
+
+    def check_size(self):
+        if self.size > 0: return
+        self.die()
+
+    def check_health(self):
+        if self.health > 0: return
+        self.die()
+
+    def die(self):
+        if self.is_dead: return
+        self.is_dead = True
+        [Mana(self.x, self.y) for _ in range(random.randint(15, 30))]
+        [Particle(self.x, self.y, self.color) for _ in range(random.randint(15, 25))]
+        EnemyTriangle.list.remove(self)
         del self

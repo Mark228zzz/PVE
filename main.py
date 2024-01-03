@@ -4,7 +4,7 @@ import random
 from config import Config
 from game import Game
 from bullet import Bullet
-from enemy import Enemy, EnemySquare
+from enemy import Enemy, EnemySquare, EnemyTriangle
 from mana import Mana
 from particle import Particle
 from shop import Shop
@@ -12,7 +12,7 @@ from shop import Shop
 def main():
     spawn_timer = 0
     #speed_timer = 0
-    spawn_interval = 3
+    spawn_interval = 2.8
     ui_manager = pygame_gui.UIManager((Config.WIDTH, Config.HEIGHT), 'theme_game.json')
     time_delta = 0
 
@@ -38,23 +38,26 @@ def main():
         # Spawn enemies
         spawn_timer += 1 / Config.FPS
         if spawn_timer >= spawn_interval:
-            random_enemy = random.choice(['Enemy', 'EnemySquare'])
+            random_enemy = random.choice(['Enemy', 'EnemySquare', 'EnemyTriangle'])
             match random_enemy:
-                case 'Enemy': [Enemy(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1), (187, 0, 0), 10, speed=random.uniform(1.0, 1.6), health=random.randint(1, 4)) for _ in range(random.randint(1, 5))]
-                case 'EnemySquare': [EnemySquare(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1)) for _ in range(1, 2)]
+                case 'Enemy': [Enemy(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1), (187, 0, 0), 9, speed=random.uniform(1.0, 1.6), health=random.randint(1, 4)) for _ in range(random.randint(1, 5))]
+                case 'EnemySquare': [EnemySquare(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1)) for _ in range(random.randint(1, 2))]
+                case 'EnemyTriangle': [EnemyTriangle(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1)) for _ in range(1)]
             spawn_timer = 0
 
         if not Game.paused:
             # Normal game update logic
             Game.player.update()
-            for bullet in Bullet.list:
-                bullet.update()
-            for enemy in Enemy.list:
-                enemy.update()
-            for mana in Mana.list:
-                mana.update()
             for particle in Particle.list:
                 particle.update()
+            for bullet in Bullet.list:
+                bullet.update()
+            for mana in Mana.list:
+                mana.update()
+            for enemy_triangle in EnemyTriangle.list:
+                enemy_triangle.update()
+            for enemy in Enemy.list:
+                enemy.update()
             for enemy_square in EnemySquare.list:
                 enemy_square.update()
         else:
