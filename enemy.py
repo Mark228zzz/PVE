@@ -109,6 +109,8 @@ class EnemyCircle(Enemy):
             self.y += math.sin(random_angle) * self.speed
 
     def drop_items(self):
+        [Mana(self.x, self.y) for _ in range(random.randint(1, 5))]
+        [Particle(self.x, self.y, self.color, time_life=0.1, radius=1) for _ in range(random.randint(5, 15))]
         return super().drop_items()
 
 
@@ -143,6 +145,8 @@ class EnemySquare(Enemy):
         self.die()
 
     def drop_items(self):
+        [Mana(self.x, self.y) for _ in range(random.randint(5, 10))]
+        [Particle(self.x, self.y, self.color, radius=1) for _ in range(random.randint(5, 15))]
         return super().drop_items()
 
 
@@ -193,4 +197,6 @@ class EnemyTriangle(Enemy):
         self.die()
 
     def drop_items(self):
+        [Mana(self.x, self.y) for _ in range(random.randint(15, 30))]
+        [Particle(self.x, self.y, self.color) for _ in range(random.randint(15, 25))]
         return super().drop_items()

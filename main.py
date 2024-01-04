@@ -47,7 +47,6 @@ def main():
 
         if not Game.paused:
             # Normal game update logic
-            Game.player.update()
             for particle in Particle.list:
                 particle.update()
             for bullet in Bullet.list:
@@ -60,6 +59,7 @@ def main():
                 enemy_circle.update()
             for enemy_square in EnemySquare.list:
                 enemy_square.update()
+            Game.player.update()
         else:
             # Draw shop interface
             pass
