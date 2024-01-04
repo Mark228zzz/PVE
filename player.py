@@ -16,8 +16,8 @@ class Player:
         self.default_speed = 0.5
         self.run_speed = 1.2
         self.turn_speed = 0.125
-        self.health = 500
-        self.max_health = 500
+        self.health = 30
+        self.max_health = 30
         self.mana = 0
         self.is_dead = False
         self.vel_x, self.vel_y = 0, 0
@@ -85,7 +85,6 @@ class Player:
         # update time
         for ability_info in self.abilities.values():
             ability_info['time'] += 1
-            print(ability_info['time'])
 
         if keys[pygame.K_q] and self.mana >= self.abilities['shoot_around']['price'] and self.abilities['shoot_around']['cooldown'] <= self.abilities['shoot_around']['time']:
             from bullet import Bullet

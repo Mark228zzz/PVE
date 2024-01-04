@@ -12,7 +12,7 @@ from shop import Shop
 def main():
     spawn_timer = 0
     #speed_timer = 0
-    spawn_interval = 4
+    spawn_interval = 1.5
     ui_manager = pygame_gui.UIManager((Config.WIDTH, Config.HEIGHT), 'theme_game.json')
     time_delta = 0
 
@@ -84,7 +84,7 @@ def main():
                     Game.player.shoot()
                 elif event.button == 3 and not Game.paused:
                     mouse_pos = pygame.mouse.get_pos()
-                    EnemySquare(mouse_pos[0], mouse_pos[1], speed=uniform(1.0, 1.6))
+                    #EnemySquare(mouse_pos[0], mouse_pos[1], speed=uniform(1.0, 1.6))
 
             # shop run
             if Game.paused:
