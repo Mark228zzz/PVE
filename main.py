@@ -4,7 +4,7 @@ from random import randint, uniform, choice
 from config import Config
 from game import Game
 from bullet import Bullet
-from enemy import EnemyCircle, EnemySquare, EnemyTriangle
+from enemy import EnemyCircle, EnemySquare, EnemyTriangle, EnemySlime
 from mana import Mana
 from particle import Particle
 from shop import Shop
@@ -12,7 +12,7 @@ from shop import Shop
 def main():
     spawn_timer = 0
     #speed_timer = 0
-    spawn_interval = 2.8
+    spawn_interval = 5
     ui_manager = pygame_gui.UIManager((Config.WIDTH, Config.HEIGHT), 'theme_game.json')
     time_delta = 0
 
@@ -38,11 +38,12 @@ def main():
         # Spawn enemies
         spawn_timer += 1 / Config.FPS
         if spawn_timer >= spawn_interval:
-            random_enemy = choice(['EnemyCircle', 'EnemySquare', 'EnemyTriangle'])
+            random_enemy = choice(['EnemyCircle', 'EnemySquare', 'EnemyTriangle', 'EnemySlime'])
             match random_enemy:
                 case 'EnemyCircle': [EnemyCircle(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(127, 0, 0), radius=10.0, health=randint(1, 3),speed=uniform(0.9, 1.5)) for _ in range(randint(3, 5))]
                 case 'EnemySquare': [EnemySquare(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(255, 128, 128), width=24, height=23, health=randint(3, 7),speed=uniform(0.7, 1.3)) for _ in range(randint(1, 3))]
                 case 'EnemyTriangle': [EnemyTriangle(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(210, 200, 0), size=32, summon_rate=2.0, health=randint(10, 15),speed=uniform(0.65, 1.0)) for _ in range(1)]
+                case 'EnemySlime': [EnemySlime(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(10, 182, 10), radius=15, push_strength=randint(3, 8), health=randint(22, 30),speed=uniform(0.4, 0.8)) for _ in range(1)]
             spawn_timer = 0
 
         if not Game.paused:
@@ -59,6 +60,8 @@ def main():
                 enemy_circle.update()
             for enemy_square in EnemySquare.list:
                 enemy_square.update()
+            for enemy_slime in EnemySlime.list:
+                enemy_slime.update()
             Game.player.update()
         else:
             # Draw shop interface
