@@ -24,14 +24,12 @@ class Player:
         self.friction = 0.02
         self.acceleration = 0.05
         self.timer_add_health = 0
-        self.timer_flicker = 0
         self.percent_health = 0
         Player.list.append(self)
 
     def draw(self):
         from game import Game
 
-        mouse_x, mouse_y = pygame.mouse.get_pos()
         pygame.draw.circle(Game.window, self.color, (self.x, self.y), self.radius, 3)
         pygame.draw.line(Game.window, self.color, (self.x, self.y),
                          (self.x + math.cos(self.angle) * (self.radius * 1.75),

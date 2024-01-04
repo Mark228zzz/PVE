@@ -200,3 +200,44 @@ class EnemyTriangle(Enemy):
         [Mana(self.x, self.y) for _ in range(random.randint(15, 30))]
         [Particle(self.x, self.y, self.color) for _ in range(random.randint(15, 25))]
         return super().drop_items()
+
+
+class EnemySlime(Enemy):
+    def __init__(self, x: int, y: int, color: tuple[int, int, int], radius: float, push_strength: int | float, health: int | float, speed: float):
+        self.radius = radius
+        self.push_strength = push_strength
+        self.push_timer = 0
+        super().__init__(x, y, color, health, speed)
+
+    def draw(self):
+        pygame.draw.circle(Game.window, self.color, (self.x, self.y), self.radius)
+
+    def move(self):
+        if not Player.list: return
+
+        self.push_timer += 1
+
+        player = Player.list[0]
+        dx, dy = player.x - self.x, player.y - self.y
+        distance = math.sqrt(dx**2 + dy**2)
+
+        self.x += math.cos(self.angle) * self.speed
+        self.y += math.sin(self.angle) * self.speed
+
+        if distance <= self.radius + player.radius and self.push_timer >= 200:
+            self.push()
+
+    def push(self):
+        if not Player.list: return
+
+        player = Player.list[0]
+        angle = math.atan2(player.y - self.y, player.x - self.x)
+        player.vel_x += math.cos(angle) * self.push_strength
+        player.vel_y += math.sin(angle) * self.push_strength
+
+        self.push_timer = 0
+
+    def drop_items(self):
+        [Mana(self.x, self.y) for _ in range(random.randint(25, 40))]
+        [Particle(self.x, self.y, self.color, 1.2, 3.8) for _ in range(random.randint(20, 40))]
+        return super().drop_items()
