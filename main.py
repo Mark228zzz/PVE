@@ -1,10 +1,10 @@
 import pygame
 import pygame_gui
-import random
+from random import randint, uniform, choice
 from config import Config
 from game import Game
 from bullet import Bullet
-from enemy import Enemy, EnemySquare, EnemyTriangle
+from enemy import EnemyCircle, EnemySquare, EnemyTriangle
 from mana import Mana
 from particle import Particle
 from shop import Shop
@@ -38,11 +38,11 @@ def main():
         # Spawn enemies
         spawn_timer += 1 / Config.FPS
         if spawn_timer >= spawn_interval:
-            random_enemy = random.choice(['Enemy', 'EnemySquare', 'EnemyTriangle'])
+            random_enemy = choice(['EnemyCircle', 'EnemySquare', 'EnemyTriangle'])
             match random_enemy:
-                case 'Enemy': [Enemy(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1), (187, 0, 0), 9, speed=random.uniform(1.0, 1.6), health=random.randint(1, 4)) for _ in range(random.randint(1, 5))]
-                case 'EnemySquare': [EnemySquare(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1)) for _ in range(random.randint(1, 2))]
-                case 'EnemyTriangle': [EnemyTriangle(random.choice([0, Config.WIDTH-1]), random.randint(0, Config.HEIGHT-1)) for _ in range(1)]
+                case 'EnemyCircle': [EnemyCircle(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(127, 0, 0), radius=10.0, health=randint(1, 3),speed=uniform(0.9, 1.5)) for _ in range(randint(3, 5))]
+                case 'EnemySquare': [EnemySquare(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(255, 128, 128), width=24, height=23, health=randint(3, 7),speed=uniform(0.7, 1.3)) for _ in range(randint(1, 3))]
+                case 'EnemyTriangle': [EnemyTriangle(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(210, 200, 0), size=32, summon_rate=2.0, health=randint(10, 15),speed=uniform(0.65, 1.0)) for _ in range(1)]
             spawn_timer = 0
 
         if not Game.paused:
@@ -56,8 +56,8 @@ def main():
                 mana.update()
             for enemy_triangle in EnemyTriangle.list:
                 enemy_triangle.update()
-            for enemy in Enemy.list:
-                enemy.update()
+            for enemy_circle in EnemyCircle.list:
+                enemy_circle.update()
             for enemy_square in EnemySquare.list:
                 enemy_square.update()
         else:
@@ -81,7 +81,7 @@ def main():
                     Game.player.shoot()
                 elif event.button == 3 and not Game.paused:
                     mouse_pos = pygame.mouse.get_pos()
-                    EnemySquare(mouse_pos[0], mouse_pos[1], speed=random.uniform(1.0, 1.6))
+                    EnemySquare(mouse_pos[0], mouse_pos[1], speed=uniform(1.0, 1.6))
 
             # shop run
             if Game.paused:
