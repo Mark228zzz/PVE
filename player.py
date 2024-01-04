@@ -1,7 +1,7 @@
 import pygame
 import math
 from config import Config
-from random import uniform
+from random import uniform, randint
 
 
 class Player:
@@ -24,7 +24,7 @@ class Player:
         self.friction = 0.02
         self.acceleration = 0.05
         self.timer_add_health = 0
-        self.percent_health = 0
+        self.abilities = {'shoot_around': {'price': 150, 'cooldown': 200, 'time': 0}}
         Player.list.append(self)
 
     def draw(self):
@@ -81,6 +81,17 @@ class Player:
         elif keys[pygame.K_d]:
             self.x = min(Config.WIDTH - self.radius, self.x + self.speed)
             self.vel_x += self.acceleration
+
+        # update time
+        for ability_info in self.abilities.values():
+            ability_info['time'] += 1
+            print(ability_info['time'])
+
+        if keys[pygame.K_q] and self.mana >= self.abilities['shoot_around']['price'] and self.abilities['shoot_around']['cooldown'] <= self.abilities['shoot_around']['time']:
+            from bullet import Bullet
+            [Bullet(self.x, self.y, angle=uniform(-3.14, 3.14), from_player=True, power=3, speed=randint(10, 14)) for _ in range(80)]
+            self.mana -= self.abilities['shoot_around']['price']
+            self.abilities['shoot_around']['time'] = 0
 
         self.vel_x *= (1 - self.friction)
         self.vel_y *= (1 - self.friction)

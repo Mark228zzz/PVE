@@ -234,6 +234,7 @@ class EnemyLeaping(Enemy):
         angle = math.atan2(player.y - self.y, player.x - self.x)
         player.vel_x += math.cos(angle) * self.push_strength
         player.vel_y += math.sin(angle) * self.push_strength
+        player.health -= random.randint(3, 8)
 
         self.push_timer = 0
 
