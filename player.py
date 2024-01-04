@@ -16,8 +16,8 @@ class Player:
         self.default_speed = 0.5
         self.run_speed = 1.2
         self.turn_speed = 0.125
-        self.health = 5
-        self.max_health = 5
+        self.health = 500
+        self.max_health = 500
         self.mana = 0
         self.is_dead = False
         self.vel_x, self.vel_y = 0, 0

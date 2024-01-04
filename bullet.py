@@ -31,7 +31,7 @@ class Bullet:
     def check_hit(self):
         # Local import to avoid circular dependency
         from player import Player
-        from enemy import EnemyCircle, EnemySquare, EnemyTriangle, EnemySlime
+        from enemy import EnemyCircle, EnemySquare, EnemyTriangle, EnemyLeaping
 
         if self.from_player:
             for enemy in EnemyCircle.list:
@@ -52,10 +52,10 @@ class Bullet:
                     enemy_triangle.health -= self.power
                     self.remove()
                     break
-            for enemy_slime in EnemySlime.list:
-                distance = math.sqrt((self.x - enemy_slime.x) ** 2 + (self.y - enemy_slime.y) ** 2)
-                if distance <= self.radius + enemy_slime.radius:
-                    enemy_slime.health -= self.power
+            for enemy_leaping in EnemyLeaping.list:
+                distance = math.sqrt((self.x - enemy_leaping.x) ** 2 + (self.y - enemy_leaping.y) ** 2)
+                if distance <= self.radius + enemy_leaping.radius:
+                    enemy_leaping.health -= self.power
                     self.remove()
                     break
         else:

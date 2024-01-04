@@ -202,7 +202,7 @@ class EnemyTriangle(Enemy):
         return super().drop_items()
 
 
-class EnemySlime(Enemy):
+class EnemyLeaping(Enemy):
     def __init__(self, x: int, y: int, color: tuple[int, int, int], radius: float, push_strength: int | float, health: int | float, speed: float):
         self.radius = radius
         self.push_strength = push_strength
