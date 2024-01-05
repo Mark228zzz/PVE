@@ -24,7 +24,7 @@ class Player:
         self.friction = 0.02
         self.acceleration = 0.05
         self.timer_add_health = 0
-        self.abilities = {'shoot_around': {'price': 150, 'cooldown': 200, 'time': 0}}
+        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}}
         Player.list.append(self)
 
     def draw(self):
@@ -54,7 +54,6 @@ class Player:
         Game.window.blit(text, text_rect)
 
     def update(self):
-        from game import Game
 
         self.draw()
         self.draw_health()
@@ -82,6 +81,7 @@ class Player:
             self.x = min(Config.WIDTH - self.radius, self.x + self.speed)
             self.vel_x += self.acceleration
 
+        # abilities
         # update time
         for ability_info in self.abilities.values():
             ability_info['time'] += 1
@@ -91,6 +91,11 @@ class Player:
             [Bullet(self.x, self.y, angle=uniform(-3.14, 3.14), from_player=True, power=3, speed=randint(10, 14)) for _ in range(80)]
             self.mana -= self.abilities['shoot_around']['price']
             self.abilities['shoot_around']['time'] = 0
+        elif keys[pygame.K_c] and self.mana >= self.abilities['aid_kit']['price'] and self.abilities['aid_kit']['cooldown'] <= self.abilities['aid_kit']['time']:
+            self.health += 5
+            if self.health > self.max_health: self.health = self.max_health
+            self.mana -= self.abilities['aid_kit']['price']
+            self.abilities['aid_kit']['time'] = 0
 
         self.vel_x *= (1 - self.friction)
         self.vel_y *= (1 - self.friction)
@@ -127,7 +132,7 @@ class Player:
             self.die()
         else:
             if self.health < self.max_health:
-                if not self.timer_add_health >= 200:
+                if not self.timer_add_health >= 150:
                     self.timer_add_health += 1
                 else:
                     self.health += 1

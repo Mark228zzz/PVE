@@ -34,10 +34,10 @@ class Bullet:
         from enemy import EnemyCircle, EnemySquare, EnemyTriangle, EnemyLeaping
 
         if self.from_player:
-            for enemy in EnemyCircle.list:
-                distance = math.sqrt((self.x - enemy.x) ** 2 + (self.y - enemy.y) ** 2)
-                if distance <= self.radius + enemy.radius:
-                    enemy.health -= self.power
+            for enemy_circle in EnemyCircle.list:
+                distance = math.sqrt((self.x - enemy_circle.x) ** 2 + (self.y - enemy_circle.y) ** 2)
+                if distance <= self.radius + enemy_circle.radius:
+                    enemy_circle.health -= self.power
                     self.remove()
                     break
             for enemy_square in EnemySquare.list:

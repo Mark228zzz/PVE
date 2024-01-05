@@ -12,7 +12,7 @@ from shop import Shop
 def main():
     spawn_timer = 0
     #speed_timer = 0
-    spawn_interval = 1.5
+    spawn_interval = 1.4
     ui_manager = pygame_gui.UIManager((Config.WIDTH, Config.HEIGHT), 'theme_game.json')
     time_delta = 0
 
@@ -68,7 +68,8 @@ def main():
             pass
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            from player import Player
+            if event.type == pygame.QUIT or not Player.list:
                 Game.running = False
                 break
             elif event.type == pygame.KEYDOWN:
