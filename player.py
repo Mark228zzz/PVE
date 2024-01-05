@@ -24,7 +24,7 @@ class Player:
         self.friction = 0.02
         self.acceleration = 0.05
         self.timer_add_health = 0
-        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}}
+        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}}
         Player.list.append(self)
 
     def draw(self):
@@ -96,6 +96,12 @@ class Player:
             if self.health > self.max_health: self.health = self.max_health
             self.mana -= self.abilities['aid_kit']['price']
             self.abilities['aid_kit']['time'] = 0
+        elif keys[pygame.K_e] and self.mana >= self.abilities['dash_forward']['price'] and self.abilities['dash_forward']['cooldown'] <= self.abilities['dash_forward']['time']:
+            self.health += 5
+            self.vel_x = math.cos(self.angle) * 20
+            self.vel_y = math.sin(self.angle) * 20
+            self.mana -= self.abilities['dash_forward']['price']
+            self.abilities['dash_forward']['time'] = 0
 
         self.vel_x *= (1 - self.friction)
         self.vel_y *= (1 - self.friction)
