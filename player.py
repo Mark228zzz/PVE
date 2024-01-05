@@ -18,7 +18,7 @@ class Player:
         self.turn_speed = 0.125
         self.health = 30
         self.max_health = 30
-        self.mana = 1234
+        self.mana = 0
         self.is_dead = False
         self.vel_x, self.vel_y = 0, 0
         self.friction = 0.02
