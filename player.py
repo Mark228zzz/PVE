@@ -18,13 +18,13 @@ class Player:
         self.turn_speed = 0.125
         self.health = 30
         self.max_health = 30
-        self.mana = 0
+        self.mana = 1234
         self.is_dead = False
         self.vel_x, self.vel_y = 0, 0
         self.friction = 0.02
         self.acceleration = 0.05
         self.timer_add_health = 0
-        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}, 'teleport': {'price': 300, 'cooldown': 450, 'time': 0}}
+        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}, 'teleport': {'price': 300, 'cooldown': 450, 'time': 0}, 'shield': {'price': 275, 'cooldown': 420, 'time': 0, 'is_actived': False, 'cooldown_using': 500, 'time_using': 0, 'value': 0}}
         Player.list.append(self)
 
     def draw(self):
@@ -116,6 +116,20 @@ class Player:
             [Particle(self.x, self.y, color=(255, 255, 255), radius=1.3) for _ in range(10)]
             self.mana -= self.abilities['teleport']['price']
             self.abilities['teleport']['time'] = 0
+        elif keys[pygame.K_f] and self.mana >= self.abilities['shield']['price'] and self.abilities['shield']['cooldown'] <= self.abilities['shield']['time'] and not self.abilities['shield']['is_actived']:
+            self.abilities['shield']['is_actived'] = True
+            self.abilities['shield']['value'] = self.health
+            self.mana -= self.abilities['shield']['price']
+
+        if self.abilities['shield']['is_actived']:
+            from particle import Particle
+            self.health = self.abilities['shield']['value']
+            self.abilities['shield']['time_using'] += 1
+            Particle(self.x, self.y, color=(255, 128, 0), radius=1.3, time_life=0.3)
+            if self.abilities['shield']['time_using'] >= self.abilities['shield']['cooldown_using']:
+                self.abilities['shield']['time_using'] = 0
+                self.abilities['shield']['time'] = 0
+                self.abilities['shield']['is_actived'] = False
 
         self.vel_x *= (1 - self.friction)
         self.vel_y *= (1 - self.friction)
