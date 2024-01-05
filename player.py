@@ -24,7 +24,7 @@ class Player:
         self.friction = 0.02
         self.acceleration = 0.05
         self.timer_add_health = 0
-        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}}
+        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}, 'teleport': {'price': 300, 'cooldown': 450, 'time': 0}}
         Player.list.append(self)
 
     def draw(self):
@@ -102,6 +102,20 @@ class Player:
             self.vel_y = math.sin(self.angle) * 20
             self.mana -= self.abilities['dash_forward']['price']
             self.abilities['dash_forward']['time'] = 0
+        elif keys[pygame.K_r] and self.mana >= self.abilities['teleport']['price'] and self.abilities['teleport']['cooldown'] <= self.abilities['teleport']['time']:
+            from particle import Particle
+            mouse_pos = pygame.mouse.get_pos()
+            start_pos, end_pos = (self.x, self.y), mouse_pos
+            number_of_particles = 80
+            for i in range(number_of_particles):
+                t = i / number_of_particles
+                x = start_pos[0] + (end_pos[0] - start_pos[0]) * t
+                y = start_pos[1] + (end_pos[1] - start_pos[1]) * t
+                Particle(x, y, (randint(30, 70), randint(30, 70), 240), radius=uniform(1.0, 2.0), time_life=0.4)
+            self.x, self.y = mouse_pos
+            [Particle(self.x, self.y, color=(255, 255, 255), radius=1.3) for _ in range(10)]
+            self.mana -= self.abilities['teleport']['price']
+            self.abilities['teleport']['time'] = 0
 
         self.vel_x *= (1 - self.friction)
         self.vel_y *= (1 - self.friction)
