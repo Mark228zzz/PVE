@@ -12,7 +12,7 @@ from shop import Shop
 def main():
     spawn_timer = 0
     #speed_timer = 0
-    spawn_interval = 1.4
+    spawn_interval = 2
     ui_manager = pygame_gui.UIManager((Config.WIDTH, Config.HEIGHT), 'theme_game.json')
     time_delta = 0
 
