@@ -32,9 +32,9 @@ class Mana:
             if distance <= self.radius + player.radius:
                 player.mana += self.mana
                 self.remove()
-            elif distance <= 175:
+            elif distance <= 300:
                 dx, dy = player.x - self.x, player.y - self.y
-                attraction_speed = 1 + (175 - distance) / 200
+                attraction_speed = 1 + (300 - distance) / 200
                 dx, dy = dx / distance, dy / distance
 
                 self.x += dx * attraction_speed

@@ -4,6 +4,7 @@ import random
 from config import Config
 from game import Game
 
+
 class Particle:
     list = []
 

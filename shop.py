@@ -9,7 +9,8 @@ class Shop:
         self.player = player
         self.items = [
             {"name": "Health +1", "description": "Increase Health by 1", "price": 200, "effect": self.increase_health},
-            {"name": "Speed +1", "description": "Increase Speed by 1", "price": 300, "effect": self.increase_speed}
+            {"name": "Speed +1", "description": "Increase Speed by 1", "price": 300, "effect": self.increase_speed},
+            {"name": "Power +1", "description": "Increase Power by 1", "price": 450, "effect": self.increase_power}
         ]
         self.buttons = []
         self.texts = []
@@ -36,7 +37,7 @@ class Shop:
                     if self.player.mana >= item['price']:
                         item['effect']()
                         self.player.mana -= item['price']
-                        item['price'] = round(item['price'] * 1.5)
+                        item['price'] = round(item['price'] * 1.1)
 
     def show(self):
         for button in self.buttons:
@@ -55,7 +56,8 @@ class Shop:
         self.player.max_health += 1
 
     def increase_speed(self):
-        self.player.speed += 0.1
+        self.player.speed += 0.25
+        self.player.run_speed += 0.35
 
     def increase_power(self):
-        self.player.power += 1
+        self.player.bullet_power += 1

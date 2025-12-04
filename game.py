@@ -1,8 +1,9 @@
 import pygame
 from config import Config
 
+
 class Game:
-    window = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT))
+    window = pygame.display.set_mode((Config.WIDTH, Config.HEIGHT), pygame.FULLSCREEN)
     clock = pygame.time.Clock()
     running = True
     paused = False
@@ -59,5 +60,3 @@ class Game:
         if cls.paused:
             cls.shop.manager.update(cls.clock.get_time() / 1000.0)
             cls.shop.manager.draw_ui(cls.window)
-
-Game.initialize()

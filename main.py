@@ -8,13 +8,37 @@ from enemy import EnemyCircle, EnemySquare, EnemyTriangle, EnemyLeaping
 from mana import Mana
 from particle import Particle
 from shop import Shop
+from menu import Menu
+import sys
 
 def main():
+    Game.initialize()
+    menu = Menu()
+    menu.create_widgets()
+
+     # Menu loop
+    while Game.status == 'start_menu':
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        if menu.start_menu.is_enabled():
+            menu.start_menu.update(events)
+            menu.start_menu.draw(Game.window)
+
+        pygame.display.update()
+        Game.clock.tick(Config.FPS)
+
+        pygame.display.update()
+
     spawn_timer = 0
     #speed_timer = 0
-    spawn_interval = 2
+    spawn_interval = 10
     ui_manager = pygame_gui.UIManager((Config.WIDTH, Config.HEIGHT), 'theme_game.json')
     time_delta = 0
+    game_time = 0
 
     shop = Shop(ui_manager, Game.player)
     while Game.running:
@@ -35,15 +59,20 @@ def main():
         time_delta = Game.clock.tick(Config.FPS) / 1000.0
         Game.window.fill((0, 0, 0))
 
+        game_time += 1 / Config.FPS
+
+        # Decrease spawn interval over time
+        spawn_interval = max(2, 10 - (game_time / 20))
+
         # Spawn enemies
         spawn_timer += 1 / Config.FPS
         if spawn_timer >= spawn_interval:
             random_enemy = choice(['EnemyCircle', 'EnemySquare', 'EnemyTriangle', 'EnemyLeaping'])
             match random_enemy:
-                case 'EnemyCircle': [EnemyCircle(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(127, 0, 0), radius=10.0, health=randint(1, 3),speed=uniform(0.9, 1.5)) for _ in range(randint(3, 5))]
-                case 'EnemySquare': [EnemySquare(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(255, 128, 128), width=24, height=23, health=randint(3, 7),speed=uniform(0.7, 1.3)) for _ in range(randint(1, 3))]
-                case 'EnemyTriangle': [EnemyTriangle(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(210, 200, 0), size=32, summon_rate=2.0, health=randint(10, 15),speed=uniform(0.65, 1.0)) for _ in range(1)]
-                case 'EnemyLeaping': [EnemyLeaping(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(10, 182, 10), radius=15, push_strength=randint(10, 18), health=randint(22, 30),speed=uniform(0.4, 0.8)) for _ in range(1)]
+                case 'EnemyCircle': [EnemyCircle(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(uniform(90.0, 220.0), 0, 0), radius=uniform(7.5, 11.0), health=randint(1, 3),speed=uniform(0.75, 2.1)) for _ in range(randint(1, 10) + int(game_time / 30))]
+                case 'EnemySquare': [EnemySquare(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(255, 128, 128), width=24, height=23, health=randint(3, 7),speed=uniform(0.7, 1.3)) for _ in range(randint(1, 3) + int(game_time / 30))]
+                case 'EnemyTriangle': [EnemyTriangle(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(210, 200, 0), size=32, summon_rate=4.0, health=randint(10, 15),speed=uniform(0.65, 1.0)) for _ in range(1 + int(game_time / 30))]
+                case 'EnemyLeaping': [EnemyLeaping(x=choice([0, Config.WIDTH-1]), y=randint(0, Config.HEIGHT-1), color=(10, 182, 10), radius=15, push_strength=randint(10, 18), health=randint(22, 30),speed=uniform(0.4, 0.8)) for _ in range(1 + int(game_time / 30))]
             spawn_timer = 0
 
         if not Game.paused:
@@ -71,6 +100,7 @@ def main():
             from player import Player
             if event.type == pygame.QUIT or not Player.list:
                 Game.running = False
+                pygame.quit()
                 break
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_TAB:
@@ -79,6 +109,10 @@ def main():
                         shop.show()
                     else:
                         shop.hide()
+                elif event.key == pygame.K_ESCAPE:
+                    Game.running = False
+                    pygame.quit()
+                    sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1 and not Game.paused:

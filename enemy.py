@@ -110,7 +110,7 @@ class EnemyCircle(Enemy):
 
     def drop_items(self):
         [Mana(self.x, self.y) for _ in range(random.randint(1, 5))]
-        [Particle(self.x, self.y, self.color, time_life=0.1, radius=1) for _ in range(random.randint(5, 15))]
+        [Particle(self.x, self.y, self.color, time_life=1.5, radius=1) for _ in range(random.randint(5, 15))]
         return super().drop_items()
 
 
@@ -141,12 +141,12 @@ class EnemySquare(Enemy):
     def blow_up(self):
         from bullet import Bullet
 
-        [Bullet(self.x, self.y, random.uniform(-3.14, 3.14), speed=20, color=self.color, power=2) for _ in range(15)]
+        [Bullet(self.x, self.y, random.uniform(-3.14, 3.14), speed=20, color=self.color, power=3) for _ in range(random.randint(20, 40))]
         self.die()
 
     def drop_items(self):
         [Mana(self.x, self.y) for _ in range(random.randint(5, 10))]
-        [Particle(self.x, self.y, self.color, radius=1) for _ in range(random.randint(5, 15))]
+        [Particle(self.x, self.y, self.color, radius=1, time_life=1.5, speed=2) for _ in range(random.randint(12, 24))]
         return super().drop_items()
 
 
@@ -188,17 +188,17 @@ class EnemyTriangle(Enemy):
         self.spawn_time += 1 / Config.FPS
         if self.spawn_time >= self.summon_rate and not self.distance >= 110:
             new_pos = (random.uniform(self.x - 10, self.x + 10), random.uniform(self.y - 10, self.y + 10))
-            [EnemyCircle(new_pos[0], new_pos[1], (127, 0, 0), 10.0, 2, 1.0) for _ in range(random.randint(1, 4))]
+            [EnemyCircle(new_pos[0], new_pos[1], (127, 0, 0), 10.0, 2, 1.0) for _ in range(random.randint(5, 10))]
             self.spawn_time = 0
-            self.size -= 6
+            self.size -= 3
 
     def check_size(self):
         if self.size > 0: return
         self.die()
 
     def drop_items(self):
-        [Mana(self.x, self.y) for _ in range(random.randint(15, 30))]
-        [Particle(self.x, self.y, self.color) for _ in range(random.randint(15, 25))]
+        [Mana(self.x, self.y) for _ in range(random.randint(18, 35))]
+        [Particle(self.x, self.y, self.color, time_life=1.5, speed=2) for _ in range(random.randint(15, 25))]
         return super().drop_items()
 
 
@@ -239,6 +239,6 @@ class EnemyLeaping(Enemy):
         self.push_timer = 0
 
     def drop_items(self):
-        [Mana(self.x, self.y) for _ in range(random.randint(25, 40))]
-        [Particle(self.x, self.y, self.color, 1.2, 3.8) for _ in range(random.randint(20, 40))]
+        [Mana(self.x, self.y) for _ in range(random.randint(45, 75))]
+        [Particle(self.x, self.y, self.color, 1.2, 3.8, time_life=1.5) for _ in range(random.randint(20, 40))]
         return super().drop_items()

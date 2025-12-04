@@ -14,17 +14,18 @@ class Player:
         self.speed = 1
         self.angle = 0
         self.default_speed = 0.5
-        self.run_speed = 1.2
-        self.turn_speed = 0.125
+        self.run_speed = 1.35
+        self.turn_speed = 0.06 #0.125
         self.health = 30
-        self.max_health = 30
+        self.max_health = 300
         self.mana = 0
         self.is_dead = False
         self.vel_x, self.vel_y = 0, 0
-        self.friction = 0.02
-        self.acceleration = 0.05
+        self.friction = 0.015
+        self.acceleration = 0.07
+        self.bullet_power = 1
         self.timer_add_health = 0
-        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}, 'teleport': {'price': 300, 'cooldown': 450, 'time': 0}, 'shield': {'price': 275, 'cooldown': 420, 'time': 0, 'is_actived': False, 'cooldown_using': 500, 'time_using': 0, 'value': 0}}
+        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}, 'teleport': {'price': 300, 'cooldown': 450, 'time': 0}, 'shield': {'price': 275, 'cooldown': 420, 'time': 0, 'is_actived': False, 'cooldown_using': 1000, 'time_using': 0, 'value': 0}}
         Player.list.append(self)
 
     def draw(self):
@@ -88,18 +89,18 @@ class Player:
 
         if keys[pygame.K_q] and self.mana >= self.abilities['shoot_around']['price'] and self.abilities['shoot_around']['cooldown'] <= self.abilities['shoot_around']['time']:
             from bullet import Bullet
-            [Bullet(self.x, self.y, angle=uniform(-3.14, 3.14), from_player=True, power=3, speed=randint(10, 14)) for _ in range(80)]
+            [Bullet(self.x, self.y, angle=uniform(-3.14, 3.14), from_player=True, power=3, speed=randint(15, 20)) for _ in range(randint(60, 100))]
             self.mana -= self.abilities['shoot_around']['price']
             self.abilities['shoot_around']['time'] = 0
         elif keys[pygame.K_c] and self.mana >= self.abilities['aid_kit']['price'] and self.abilities['aid_kit']['cooldown'] <= self.abilities['aid_kit']['time']:
-            self.health += 5
+            self.health += 10
             if self.health > self.max_health: self.health = self.max_health
             self.mana -= self.abilities['aid_kit']['price']
             self.abilities['aid_kit']['time'] = 0
         elif keys[pygame.K_e] and self.mana >= self.abilities['dash_forward']['price'] and self.abilities['dash_forward']['cooldown'] <= self.abilities['dash_forward']['time']:
             self.health += 5
-            self.vel_x = math.cos(self.angle) * 20
-            self.vel_y = math.sin(self.angle) * 20
+            self.vel_x = math.cos(self.angle) * 25
+            self.vel_y = math.sin(self.angle) * 25
             self.mana -= self.abilities['dash_forward']['price']
             self.abilities['dash_forward']['time'] = 0
         elif keys[pygame.K_r] and self.mana >= self.abilities['teleport']['price'] and self.abilities['teleport']['cooldown'] <= self.abilities['teleport']['time']:
@@ -157,7 +158,7 @@ class Player:
 
         bullet_x = self.x + math.cos(self.angle) * (self.radius * 2)
         bullet_y = self.y + math.sin(self.angle) * (self.radius * 2)
-        [Bullet(bullet_x, bullet_y, self.angle + uniform(-0.05, 0.05), power=1, from_player=True, speed=7) for _ in range(1)]
+        [Bullet(bullet_x, bullet_y, self.angle + uniform(-0.05, 0.05), power=self.bullet_power, from_player=True, speed=randint(8, 11)) for _ in range(10)]
 
     def check_health(self):
         self.percent_health = round(self.health / self.max_health, 2)

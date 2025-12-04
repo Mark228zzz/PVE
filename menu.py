@@ -27,12 +27,12 @@ class Menu:
         widget_font=pygame_menu.font.FONT_NEVIS,  # Same font for widgets
         widget_font_size=35,
         title_font_shadow=True,                # Enable shadow for title font
-        title_font_shadow_offset=2,            # Shadow offset for title font
+        title_font_shadow_offset=1,            # Shadow offset for title font
         title_font_shadow_color=(100, 130, 155),     # Shadow color for title font
         widget_font_shadow=True,               # Enable shadow for widget fonts
         widget_shadow_width = 9,
         widget_shadow_radius = 30,
-        widget_font_shadow_offset=2,           # Shadow offset for widget fonts
+        widget_font_shadow_offset=1,           # Shadow offset for widget fonts
         widget_font_shadow_color=(100, 130, 155)     # Shadow color for widget fonts
         )
 
@@ -51,4 +51,9 @@ class Menu:
         # continue_game_menu
 
         # new_game_menu
-        self.new_game_menu.add.selector('Choose a difficulty')
+        self.new_game_menu.add.selector('Difficulty: ', [(' Easy ', 1), ('Medium', 2), (' Hard ', 3)])
+        self.new_game_menu.add.button('Start New Game', self.start_new_game)
+
+    def start_new_game(self):
+        from game import Game
+        Game.status = 'playing'
