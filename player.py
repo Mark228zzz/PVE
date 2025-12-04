@@ -17,12 +17,12 @@ class Player:
         self.run_speed = 1.35
         self.turn_speed = 0.06 #0.125
         self.health = 30
-        self.max_health = 300
+        self.max_health = 30
         self.mana = 0
         self.is_dead = False
         self.vel_x, self.vel_y = 0, 0
-        self.friction = 0.015
-        self.acceleration = 0.07
+        self.friction = 0.012
+        self.acceleration = 0.05
         self.bullet_power = 1
         self.timer_add_health = 0
         self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}, 'teleport': {'price': 300, 'cooldown': 450, 'time': 0}, 'shield': {'price': 275, 'cooldown': 420, 'time': 0, 'is_actived': False, 'cooldown_using': 1000, 'time_using': 0, 'value': 0}}
@@ -158,7 +158,7 @@ class Player:
 
         bullet_x = self.x + math.cos(self.angle) * (self.radius * 2)
         bullet_y = self.y + math.sin(self.angle) * (self.radius * 2)
-        [Bullet(bullet_x, bullet_y, self.angle + uniform(-0.05, 0.05), power=self.bullet_power, from_player=True, speed=randint(8, 11)) for _ in range(10)]
+        [Bullet(bullet_x, bullet_y, self.angle + uniform(-0.065, 0.065), power=self.bullet_power, from_player=True, speed=randint(8, 11)) for _ in range(1)]
 
     def check_health(self):
         self.percent_health = round(self.health / self.max_health, 2)
