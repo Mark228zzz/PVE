@@ -1,244 +1,108 @@
+from entity import Entity
+from config import (ENEMY_MIN_RADIUS, ENEMY_MAX_RADIUS, ENEMY_HP, ENEMY_FOLLOW_SPEED,
+                    ENEMY_STOP_DISTANCE, ENEMY_BULLET_SPEED_MIN, ENEMY_BULLET_SPEED_MAX,
+                    ENEMY_BULLET_DAMAGE, ENEMY_SHOOT_DELAY, ENEMY_SHOOT_RANGE)
 import pygame
 import math
 import random
-from config import Config
-from mana import Mana
-from particle import Particle
-from player import Player
-from game import Game
 
 
-class Enemy:
-    list = []
+class Enemy(Entity):
+    def __init__(self, x, y, radius=None):
+        # Random size variation
+        if radius is None:
+            radius = random.uniform(ENEMY_MIN_RADIUS, ENEMY_MAX_RADIUS)
 
-    def __init__(self, x: int, y: int, color: tuple[int, int, int], health: int | float, speed: float):
-        self.x, self.y = x, y
-        self.color = color
-        self.health = health
-        self.speed = speed
-        self.angle = 0
-        self.turn_speed = 0.038
-        self.is_dead = False
-        self.__class__.list.append(self)
+        super().__init__(x, y, radius=radius)
+        self.color = (255, 80, 80)
 
-    def draw(self):
-        pass
+        # Health scales with size
+        size_multiplier = radius / ENEMY_MAX_RADIUS
+        self.max_hp = int(ENEMY_HP * size_multiplier)
+        self.hp = self.max_hp
 
-    def update(self):
-        self.draw()
-        self.update_angle()
-        self.move()
-        self.check_health()
+        # AI
+        self.follow_speed = ENEMY_FOLLOW_SPEED
+        self.stop_distance = ENEMY_STOP_DISTANCE
 
-    def update_angle(self):
-        if not Player.list: return
+        # Shooting
+        self.shoot_cooldown = 0
+        self.shoot_delay = ENEMY_SHOOT_DELAY
+        self.shoot_range = ENEMY_SHOOT_RANGE
+        self.bullet_damage = ENEMY_BULLET_DAMAGE
+        self.bullet_speed = random.uniform(ENEMY_BULLET_SPEED_MIN, ENEMY_BULLET_SPEED_MAX)
 
-        player = Player.list[0]
-        target_angle = math.atan2(player.y - self.y, player.x - self.x)
+        self._draw_image()
 
-        angle_diff = (target_angle - self.angle + math.pi) % (2 * math.pi) - math.pi
+    def _draw_image(self):
+        self.image.fill((0, 0, 0, 0))
+        pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius)
 
-        if angle_diff < -self.turn_speed: self.angle -= self.turn_speed
-        elif angle_diff > self.turn_speed: self.angle += self.turn_speed
-        else: self.angle = target_angle
+    def update(self, dt, player_pos=None):
+        if player_pos:
+            self._follow_player(player_pos)
 
-    def move(self): ...
+        super().update(dt)
 
-    def check_health(self):
-        if self.health > 0: return
-        self.die()
+        # Update cooldowns
+        if self.shoot_cooldown > 0:
+            self.shoot_cooldown -= dt
 
-    def drop_items(self): ...
+    def _follow_player(self, player_pos):
+        distance = self.pos.distance_to(player_pos)
 
-    def die(self):
-        if self.is_dead: return
+        if distance > self.stop_distance:
+            # Move towards player
+            direction = (player_pos - self.pos).normalize()
+            self.vel += direction * self.follow_speed
 
-        self.is_dead = True
-        self.drop_items()
-        self.__class__.list.remove(self)
-        del self
+    def shoot(self, target_pos):
+        """Returns a bullet if ready to shoot and in range, otherwise None"""
+        distance = self.pos.distance_to(target_pos)
 
+        if self.shoot_cooldown <= 0 and distance <= self.shoot_range:
+            self.shoot_cooldown = self.shoot_delay
 
-class EnemyCircle(Enemy):
-    list = []
+            # Calculate angle to target
+            angle = math.atan2(target_pos.y - self.pos.y, target_pos.x - self.pos.x)
 
-    def __init__(self, x: int, y: int, color: tuple[int, int, int], radius: float, health: int | float, speed: float):
-        self.radius = radius
-        self.shoot_timer = 0
-        self.shoot_interval = random.uniform(0.5, 5.0)
-        super().__init__(x, y, color, health, speed)
+            # Add slight randomness
+            angle_variance = random.uniform(-0.15, 0.15)
+            angle += angle_variance
 
-    def draw(self):
-        pygame.draw.circle(Game.window, self.color, (self.x, self.y), self.radius, 3)
-        target_x = self.x + math.cos(self.angle) * (self.radius * 1.5)
-        target_y = self.y + math.sin(self.angle) * (self.radius * 1.5)
-        pygame.draw.line(Game.window, self.color, (self.x, self.y), (target_x, target_y), 2)
-        return super().draw()
+            # Spawn bullet at edge of enemy
+            spawn_distance = self.radius + 5
+            spawn_x = self.pos.x + math.cos(angle) * spawn_distance
+            spawn_y = self.pos.y + math.sin(angle) * spawn_distance
 
-    def update(self):
-        self.update_shoot_timer()
-        return super().update()
+            from bullet import Bullet
+            return Bullet(spawn_x, spawn_y, angle, self.bullet_speed, self.bullet_damage, owner_type='enemy')
+        return None
 
-    def update_shoot_timer(self):
-        self.shoot_timer += 1 / Config.FPS
-        if self.shoot_timer >= self.shoot_interval:
-            self.shoot()
-            self.shoot_timer = 0
+    def take_damage(self, damage):
+        self.hp -= damage
+        if self.hp <= 0:
+            self.hp = 0
+            return True  # Enemy is dead
+        return False
 
-    def shoot(self):
-        from bullet import Bullet
+    def draw(self, surface, camera):
+        super().draw(surface, camera)
 
-        bullet_x = self.x + math.cos(self.angle) * (self.radius * 2)
-        bullet_y = self.y + math.sin(self.angle) * (self.radius * 2)
-        Bullet(bullet_x, bullet_y, self.angle + random.uniform(-0.05, 0.05), power=1, color=self.color, speed=5)
+        # Draw health bar
+        if self.hp < self.max_hp:
+            bar_width = 30
+            bar_height = 4
+            bar_x = self.rect.centerx - bar_width // 2
+            bar_y = self.rect.top - 8
 
-    def move(self):
-        if not Player.list: return
+            # Apply camera offset
+            screen_pos = camera.apply(pygame.Rect(bar_x, bar_y, bar_width, bar_height))
 
-        player = Player.list[0]
-        dx, dy = player.x - self.x, player.y - self.y
-        distance = math.sqrt(dx**2 + dy**2)
+            # Background
+            pygame.draw.rect(surface, (100, 100, 100), screen_pos)
 
-        if distance > 100:
-            dx, dy = dx / distance, dy / distance
-            self.x += dx * self.speed
-            self.y += dy * self.speed
-        else:
-            random_angle = random.uniform(2, 5 * math.pi)
-            self.x += math.cos(random_angle) * self.speed
-            self.y += math.sin(random_angle) * self.speed
-
-    def drop_items(self):
-        [Mana(self.x, self.y) for _ in range(random.randint(1, 5))]
-        [Particle(self.x, self.y, self.color, time_life=1.5, radius=1) for _ in range(random.randint(5, 15))]
-        return super().drop_items()
-
-
-class EnemySquare(Enemy):
-    list = []
-
-    def __init__(self, x: int, y: int, color: tuple[int, int, int], width: int | float, height: int | float, health: int | float, speed: float):
-        self.width, self.height = width, height
-        super().__init__(x, y, color, health, speed)
-
-    def draw(self):
-        pygame.draw.rect(Game.window, self.color, (self.x, self.y, self.width, self.height), 5)
-        return super().draw()
-
-    def move(self):
-        if not Player.list: return
-
-        player = Player.list[0]
-        dx, dy = player.x - self.x, player.y - self.y
-        distance = math.sqrt(dx**2 + dy**2)
-
-        self.x += math.cos(self.angle) * self.speed
-        self.y += math.sin(self.angle) * self.speed
-
-        if distance <= 50:
-            self.blow_up()
-
-    def blow_up(self):
-        from bullet import Bullet
-
-        [Bullet(self.x, self.y, random.uniform(-3.14, 3.14), speed=20, color=self.color, power=3) for _ in range(random.randint(20, 40))]
-        self.die()
-
-    def drop_items(self):
-        [Mana(self.x, self.y) for _ in range(random.randint(5, 10))]
-        [Particle(self.x, self.y, self.color, radius=1, time_life=1.5, speed=2) for _ in range(random.randint(12, 24))]
-        return super().drop_items()
-
-
-class EnemyTriangle(Enemy):
-    list = []
-
-    def __init__(self, x: int, y: int, color: tuple[int, int, int], size: float, health: int | float, speed: float, summon_rate: int | float):
-        self.size = size
-        self.summon_rate = summon_rate
-        self.height = size * math.sqrt(3) / 2
-        self.points = []
-        self.spawn_time = 0
-        self.distance = 0
-        super().__init__(x, y, color, health, speed)
-
-    def draw(self):
-        self.points = [(self.x, self.y - 2/3 * self.height), (self.x - self.size/2, self.y + 1/3 * self.height), (self.x + self.size/2, self.y + 1/3 * self.height)]
-        pygame.draw.polygon(Game.window, self.color, self.points, 4)
-        return super().draw()
-
-    def update(self):
-        self.update_summon()
-        self.check_size()
-        return super().update()
-
-    def move(self):
-        if not Player.list: return
-
-        player = Player.list[0]
-        dx, dy = player.x - self.x, player.y - self.y
-        distance = math.sqrt(dx**2 + dy**2)
-        self.distance = distance
-
-        if distance >= 110:
-            self.x += math.cos(self.angle) * self.speed
-            self.y += math.sin(self.angle) * self.speed
-
-    def update_summon(self):
-        self.spawn_time += 1 / Config.FPS
-        if self.spawn_time >= self.summon_rate and not self.distance >= 110:
-            new_pos = (random.uniform(self.x - 10, self.x + 10), random.uniform(self.y - 10, self.y + 10))
-            [EnemyCircle(new_pos[0], new_pos[1], (127, 0, 0), 10.0, 2, 1.0) for _ in range(random.randint(5, 10))]
-            self.spawn_time = 0
-            self.size -= 3
-
-    def check_size(self):
-        if self.size > 0: return
-        self.die()
-
-    def drop_items(self):
-        [Mana(self.x, self.y) for _ in range(random.randint(18, 35))]
-        [Particle(self.x, self.y, self.color, time_life=1.5, speed=2) for _ in range(random.randint(15, 25))]
-        return super().drop_items()
-
-
-class EnemyLeaping(Enemy):
-    def __init__(self, x: int, y: int, color: tuple[int, int, int], radius: float, push_strength: int | float, health: int | float, speed: float):
-        self.radius = radius
-        self.push_strength = push_strength
-        self.push_timer = 0
-        super().__init__(x, y, color, health, speed)
-
-    def draw(self):
-        pygame.draw.circle(Game.window, self.color, (self.x, self.y), self.radius)
-
-    def move(self):
-        if not Player.list: return
-
-        self.push_timer += 1
-
-        player = Player.list[0]
-        dx, dy = player.x - self.x, player.y - self.y
-        distance = math.sqrt(dx**2 + dy**2)
-
-        self.x += math.cos(self.angle) * self.speed
-        self.y += math.sin(self.angle) * self.speed
-
-        if distance <= self.radius + player.radius and self.push_timer >= 200:
-            self.push()
-
-    def push(self):
-        if not Player.list: return
-
-        player = Player.list[0]
-        angle = math.atan2(player.y - self.y, player.x - self.x)
-        player.vel_x += math.cos(angle) * self.push_strength
-        player.vel_y += math.sin(angle) * self.push_strength
-        player.health -= random.randint(3, 8)
-
-        self.push_timer = 0
-
-    def drop_items(self):
-        [Mana(self.x, self.y) for _ in range(random.randint(45, 75))]
-        [Particle(self.x, self.y, self.color, 1.2, 3.8, time_life=1.5) for _ in range(random.randint(20, 40))]
-        return super().drop_items()
+            # Health
+            health_width = int((self.hp / self.max_hp) * bar_width)
+            health_rect = pygame.Rect(screen_pos.x, screen_pos.y, health_width, bar_height)
+            pygame.draw.rect(surface, (255, 80, 80), health_rect)

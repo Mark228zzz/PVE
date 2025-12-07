@@ -1,149 +1,97 @@
 import pygame
+from entity import Entity
+from config import (PLAYER_RADIUS, PLAYER_BASE_HP, PLAYER_ACCELERATION, PLAYER_FRICTION,
+                    PLAYER_TURN_SPEED, PLAYER_BULLET_SPEED, PLAYER_BULLET_DAMAGE,
+                    PLAYER_SHOOT_DELAY, UPGRADE_DAMAGE_BASE_COST, UPGRADE_DAMAGE_COST_INCREASE,
+                    UPGRADE_DAMAGE_INCREASE, UPGRADE_SPEED_BASE_COST, UPGRADE_SPEED_COST_INCREASE,
+                    UPGRADE_SPEED_INCREASE, UPGRADE_HP_BASE_COST, UPGRADE_HP_COST_INCREASE,
+                    UPGRADE_HP_INCREASE, UPGRADE_HP_HEAL,
+                    ABILITY_DASH_COST, ABILITY_DASH_DISTANCE, ABILITY_DASH_COOLDOWN,
+                    ABILITY_SHIELD_COST, ABILITY_SHIELD_DURATION, ABILITY_SHIELD_COOLDOWN,
+                    ABILITY_BURST_COST, ABILITY_BURST_DAMAGE, ABILITY_BURST_RADIUS, ABILITY_BURST_COOLDOWN)
 import math
-from config import Config
-from random import uniform, randint
+import random
 
 
-class Player:
-    list = []
-
-    def __init__(self):
-        self.x, self.y = Config.WIDTH // 2, Config.HEIGHT // 2
-        self.color = (255, 255, 255)
-        self.radius = 10
-        self.speed = 1
+class Player(Entity):
+    def __init__(self, x, y, difficulty='normal'):
+        super().__init__(x, y, radius=PLAYER_RADIUS)
+        self.color = (100, 200, 255)
+        self.acceleration = PLAYER_ACCELERATION
+        self.friction = PLAYER_FRICTION
         self.angle = 0
-        self.default_speed = 0.5
-        self.run_speed = 1.35
-        self.turn_speed = 0.06 #0.125
-        self.health = 30
-        self.max_health = 30
+        self.turn_speed = PLAYER_TURN_SPEED
+
+        # Health based on difficulty
+        self.max_hp = PLAYER_BASE_HP[difficulty]
+        self.hp = self.max_hp
+
+        # Shooting
+        self.shoot_cooldown = 0
+        self.shoot_delay = PLAYER_SHOOT_DELAY
+        self.bullet_damage = PLAYER_BULLET_DAMAGE
+        self.bullet_speed = PLAYER_BULLET_SPEED
         self.mana = 0
-        self.is_dead = False
-        self.vel_x, self.vel_y = 0, 0
-        self.friction = 0.012
-        self.acceleration = 0.05
-        self.bullet_power = 1
-        self.timer_add_health = 0
-        self.abilities = {'shoot_around': {'price': 200, 'cooldown': 300, 'time': 0}, 'aid_kit': {'price': 150, 'cooldown': 400, 'time': 0}, 'dash_forward': {'price': 180, 'cooldown': 260, 'time': 0}, 'teleport': {'price': 300, 'cooldown': 450, 'time': 0}, 'shield': {'price': 275, 'cooldown': 420, 'time': 0, 'is_actived': False, 'cooldown_using': 1000, 'time_using': 0, 'value': 0}}
-        Player.list.append(self)
 
-    def draw(self):
-        from game import Game
+        # Upgrades
+        self.damage_level = 1
+        self.speed_level = 1
+        self.hp_level = 1
 
-        pygame.draw.circle(Game.window, self.color, (self.x, self.y), self.radius, 3)
-        pygame.draw.line(Game.window, self.color, (self.x, self.y),
-                         (self.x + math.cos(self.angle) * (self.radius * 1.75),
-                          self.y + math.sin(self.angle) * (self.radius * 1.75)), 3)
+        # Abilities
+        self.dash_cooldown = 0
+        self.shield_cooldown = 0
+        self.shield_active = False
+        self.shield_time = 0
+        self.burst_cooldown = 0
 
-    def draw_health(self):
-        from game import Game
+        self._draw_image()
 
-        font = pygame.font.SysFont('notosanscjksc', 28)
-        text = font.render(f'hp: {self.health}/{self.max_health}', True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.bottomleft = (65, Config.HEIGHT - 10)
-        Game.window.blit(text, text_rect)
+    def _draw_image(self):
+        self.image.fill((0, 0, 0, 0))
+        pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius, width=4)
 
-    def draw_mana(self):
-        from game import Game
+    def update(self, dt, camera=None):
+        self._handle_input()
+        self._update_angle(camera)
+        super().update(dt)
 
-        font = pygame.font.SysFont('notosanscjksc', 28)
-        text = font.render(f'mana: {self.mana}', True, (128, 0, 128))
-        text_rect = text.get_rect()
-        text_rect.bottomleft = (65, Config.HEIGHT - 40)
-        Game.window.blit(text, text_rect)
+        # Update cooldowns
+        if self.shoot_cooldown > 0:
+            self.shoot_cooldown -= dt
+        if self.dash_cooldown > 0:
+            self.dash_cooldown -= dt
+        if self.shield_cooldown > 0:
+            self.shield_cooldown -= dt
+        if self.burst_cooldown > 0:
+            self.burst_cooldown -= dt
 
-    def update(self):
+        # Update shield
+        if self.shield_active:
+            self.shield_time -= dt
+            if self.shield_time <= 0:
+                self.shield_active = False
 
-        self.draw()
-        self.draw_health()
-        self.draw_mana()
-        self.update_angle()
-        self.check_health()
-        self.percent_health = round(self.health / self.max_health, 2)
-
+    def _handle_input(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
-            self.speed = self.run_speed
-        else:
-            self.speed = self.default_speed
 
-        if keys[pygame.K_w]:
-            self.y = max(0 + self.radius, self.y - self.speed)
-            self.vel_y -= self.acceleration
-        elif keys[pygame.K_s]:
-            self.y = min(Config.HEIGHT - self.radius, self.y + self.speed)
-            self.vel_y += self.acceleration
-        if keys[pygame.K_a]:
-            self.x = max(0 + self.radius, self.x - self.speed)
-            self.vel_x -= self.acceleration
-        elif keys[pygame.K_d]:
-            self.x = min(Config.WIDTH - self.radius, self.x + self.speed)
-            self.vel_x += self.acceleration
+        if keys[pygame.K_w]: self.vel.y -= self.acceleration
+        if keys[pygame.K_s]: self.vel.y += self.acceleration
+        if keys[pygame.K_a]: self.vel.x -= self.acceleration
+        if keys[pygame.K_d]: self.vel.x += self.acceleration
 
-        # abilities
-        # update time
-        for ability_info in self.abilities.values():
-            ability_info['time'] += 1
-
-        if keys[pygame.K_q] and self.mana >= self.abilities['shoot_around']['price'] and self.abilities['shoot_around']['cooldown'] <= self.abilities['shoot_around']['time']:
-            from bullet import Bullet
-            [Bullet(self.x, self.y, angle=uniform(-3.14, 3.14), from_player=True, power=3, speed=randint(15, 20)) for _ in range(randint(60, 100))]
-            self.mana -= self.abilities['shoot_around']['price']
-            self.abilities['shoot_around']['time'] = 0
-        elif keys[pygame.K_c] and self.mana >= self.abilities['aid_kit']['price'] and self.abilities['aid_kit']['cooldown'] <= self.abilities['aid_kit']['time']:
-            self.health += 10
-            if self.health > self.max_health: self.health = self.max_health
-            self.mana -= self.abilities['aid_kit']['price']
-            self.abilities['aid_kit']['time'] = 0
-        elif keys[pygame.K_e] and self.mana >= self.abilities['dash_forward']['price'] and self.abilities['dash_forward']['cooldown'] <= self.abilities['dash_forward']['time']:
-            self.health += 5
-            self.vel_x = math.cos(self.angle) * 25
-            self.vel_y = math.sin(self.angle) * 25
-            self.mana -= self.abilities['dash_forward']['price']
-            self.abilities['dash_forward']['time'] = 0
-        elif keys[pygame.K_r] and self.mana >= self.abilities['teleport']['price'] and self.abilities['teleport']['cooldown'] <= self.abilities['teleport']['time']:
-            from particle import Particle
-            mouse_pos = pygame.mouse.get_pos()
-            start_pos, end_pos = (self.x, self.y), mouse_pos
-            number_of_particles = 80
-            for i in range(number_of_particles):
-                t = i / number_of_particles
-                x = start_pos[0] + (end_pos[0] - start_pos[0]) * t
-                y = start_pos[1] + (end_pos[1] - start_pos[1]) * t
-                Particle(x, y, (randint(30, 70), randint(30, 70), 240), radius=uniform(1.0, 2.0), time_life=0.4)
-            self.x, self.y = mouse_pos
-            [Particle(self.x, self.y, color=(255, 255, 255), radius=1.3) for _ in range(10)]
-            self.mana -= self.abilities['teleport']['price']
-            self.abilities['teleport']['time'] = 0
-        elif keys[pygame.K_f] and self.mana >= self.abilities['shield']['price'] and self.abilities['shield']['cooldown'] <= self.abilities['shield']['time'] and not self.abilities['shield']['is_actived']:
-            self.abilities['shield']['is_actived'] = True
-            self.abilities['shield']['value'] = self.health
-            self.mana -= self.abilities['shield']['price']
-
-        if self.abilities['shield']['is_actived']:
-            from particle import Particle
-            self.health = self.abilities['shield']['value']
-            self.abilities['shield']['time_using'] += 1
-            Particle(self.x, self.y, color=(255, 128, 0), radius=1.3, time_life=0.3)
-            if self.abilities['shield']['time_using'] >= self.abilities['shield']['cooldown_using']:
-                self.abilities['shield']['time_using'] = 0
-                self.abilities['shield']['time'] = 0
-                self.abilities['shield']['is_actived'] = False
-
-        self.vel_x *= (1 - self.friction)
-        self.vel_y *= (1 - self.friction)
-
-        self.x += self.vel_x
-        self.y += self.vel_y
-
-        self.x = max(self.radius, min(Config.WIDTH - self.radius, self.x))
-        self.y = max(self.radius, min(Config.HEIGHT - self.radius, self.y))
-
-    def update_angle(self):
+    def _update_angle(self, camera=None):
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        target_angle = math.atan2(mouse_y - self.y, mouse_x - self.x)
+
+        # Convert screen mouse position to world position
+        if camera:
+            world_mouse_x = mouse_x + camera.x
+            world_mouse_y = mouse_y + camera.y
+        else:
+            world_mouse_x = mouse_x
+            world_mouse_y = mouse_y
+
+        target_angle = math.atan2(world_mouse_y - self.pos.y, world_mouse_x - self.pos.x)
         angle_diff = (target_angle - self.angle + math.pi) % (2 * math.pi) - math.pi
 
         if angle_diff < -self.turn_speed:
@@ -154,30 +102,142 @@ class Player:
             self.angle = target_angle
 
     def shoot(self):
-        from bullet import Bullet  # Local import
+        """Returns a bullet if ready to shoot, otherwise None"""
+        if self.shoot_cooldown <= 0:
+            self.shoot_cooldown = self.shoot_delay
 
-        bullet_x = self.x + math.cos(self.angle) * (self.radius * 2)
-        bullet_y = self.y + math.sin(self.angle) * (self.radius * 2)
-        [Bullet(bullet_x, bullet_y, self.angle + uniform(-0.065, 0.065), power=self.bullet_power, from_player=True, speed=randint(8, 11)) for _ in range(1)]
+            # Add randomness to angle and speed
+            angle_variance = random.uniform(-0.1, 0.1)  # +/- ~6 degrees
+            speed_variance = random.uniform(0.9, 1.1)
 
-    def check_health(self):
-        self.percent_health = round(self.health / self.max_health, 2)
+            bullet_angle = self.angle + angle_variance
+            bullet_speed = self.bullet_speed * speed_variance
 
-        if self.health <= 0:
-            self.die()
-        else:
-            if self.health < self.max_health:
-                if not self.timer_add_health >= 150:
-                    self.timer_add_health += 1
-                else:
-                    self.health += 1
-                    self.timer_add_health = 0
+            # Spawn bullet at the edge of player
+            spawn_distance = self.radius + 5
+            spawn_x = self.pos.x + math.cos(self.angle) * spawn_distance
+            spawn_y = self.pos.y + math.sin(self.angle) * spawn_distance
 
-    def get_pos(self):
-        return (self.x, self.y)
+            from bullet import Bullet
+            return Bullet(spawn_x, spawn_y, bullet_angle, bullet_speed, self.bullet_damage, owner_type='player')
+        return None
 
-    def die(self):
-        if self.is_dead: return
-        Player.list.remove(self)
-        self.is_dead = True
-        del self
+    def draw(self, surface, camera):
+        # Draw shield if active
+        if self.shield_active:
+            shield_radius = self.radius + 10
+            pulse = abs(math.sin(self.shield_time * 5)) * 5
+            current_radius = shield_radius + pulse
+
+            screen_pos = camera.apply_pos(self.pos.x, self.pos.y)
+
+            # Outer glow
+            alpha = int(100 * (self.shield_time / ABILITY_SHIELD_DURATION))
+            shield_surface = pygame.Surface((current_radius * 2 + 20, current_radius * 2 + 20), pygame.SRCALPHA)
+            pygame.draw.circle(shield_surface, (100, 200, 255, alpha), (current_radius + 10, current_radius + 10), current_radius, 3)
+            shield_rect = shield_surface.get_rect(center=screen_pos)
+            surface.blit(shield_surface, shield_rect)
+
+        # Draw the player
+        super().draw(surface, camera)
+
+        # Draw the direction line
+        line_length = self.radius + 15
+        end_x = self.pos.x + math.cos(self.angle) * line_length
+        end_y = self.pos.y + math.sin(self.angle) * line_length
+
+        start_pos = camera.apply_pos(self.pos.x, self.pos.y)
+        end_pos = camera.apply_pos(end_x, end_y)
+
+        pygame.draw.line(surface, (255, 255, 255), start_pos, end_pos, 4)
+
+    def take_damage(self, damage):
+        # Shield blocks damage
+        if self.shield_active:
+            return
+        self.hp -= damage
+        if self.hp < 0:
+            self.hp = 0
+
+    def collect_mana(self, amount):
+        self.mana += amount
+
+    # Abilities
+    def use_dash(self):
+        """Dash forward quickly (Q key)"""
+        if self.mana >= ABILITY_DASH_COST and self.dash_cooldown <= 0:
+            self.mana -= ABILITY_DASH_COST
+            self.dash_cooldown = ABILITY_DASH_COOLDOWN
+
+            # Dash in current facing direction
+            dash_x = math.cos(self.angle) * ABILITY_DASH_DISTANCE
+            dash_y = math.sin(self.angle) * ABILITY_DASH_DISTANCE
+
+            from config import WORLD_WIDTH, WORLD_HEIGHT
+            self.pos.x = max(self.radius, min(self.pos.x + dash_x, WORLD_WIDTH - self.radius))
+            self.pos.y = max(self.radius, min(self.pos.y + dash_y, WORLD_HEIGHT - self.radius))
+
+            return True
+        return False
+
+    def use_shield(self):
+        """Activate damage shield (E key)"""
+        if self.mana >= ABILITY_SHIELD_COST and self.shield_cooldown <= 0:
+            self.mana -= ABILITY_SHIELD_COST
+            self.shield_cooldown = ABILITY_SHIELD_COOLDOWN
+            self.shield_active = True
+            self.shield_time = ABILITY_SHIELD_DURATION
+            return True
+        return False
+
+    def use_burst(self):
+        """Return enemies in burst radius for damage (R key)"""
+        if self.mana >= ABILITY_BURST_COST and self.burst_cooldown <= 0:
+            self.mana -= ABILITY_BURST_COST
+            self.burst_cooldown = ABILITY_BURST_COOLDOWN
+            return {'pos': self.pos.copy(), 'radius': ABILITY_BURST_RADIUS, 'damage': ABILITY_BURST_DAMAGE}
+        return None
+
+    def get_damage_upgrade_cost(self):
+        """Calculate current damage upgrade cost"""
+        return UPGRADE_DAMAGE_BASE_COST + (self.damage_level - 1) * UPGRADE_DAMAGE_COST_INCREASE
+
+    def get_speed_upgrade_cost(self):
+        """Calculate current speed upgrade cost"""
+        return UPGRADE_SPEED_BASE_COST + (self.speed_level - 1) * UPGRADE_SPEED_COST_INCREASE
+
+    def get_hp_upgrade_cost(self):
+        """Calculate current HP upgrade cost"""
+        return UPGRADE_HP_BASE_COST + (self.hp_level - 1) * UPGRADE_HP_COST_INCREASE
+
+    def upgrade_damage(self):
+        """Upgrade damage"""
+        cost = self.get_damage_upgrade_cost()
+        if self.mana >= cost:
+            self.mana -= cost
+            self.damage_level += 1
+            self.bullet_damage += UPGRADE_DAMAGE_INCREASE
+            return True
+        return False
+
+    def upgrade_speed(self):
+        """Upgrade bullet speed"""
+        cost = self.get_speed_upgrade_cost()
+        if self.mana >= cost:
+            self.mana -= cost
+            self.speed_level += 1
+            self.bullet_speed += UPGRADE_SPEED_INCREASE
+            return True
+        return False
+
+    def upgrade_hp(self):
+        """Upgrade max HP and restore health"""
+        cost = self.get_hp_upgrade_cost()
+        if self.mana >= cost:
+            self.mana -= cost
+            self.hp_level += 1
+            self.max_hp += UPGRADE_HP_INCREASE
+            self.hp = min(self.hp + UPGRADE_HP_HEAL, self.max_hp)
+            return True
+        return False
+
